@@ -3,8 +3,16 @@
 Plugin Name: Beaver Builder - Lazy Load
 Description: Lazy loads background images set using Beaver Builder. Also will serve .webp if setting is selected.
 Author: Clay Harmon
-Version: 0.2
+Version: 0.3
 */
+
+require 'plugin-update-checker/plugin-update-checker.php';
+$bbll_update_checker = Puc_v4_Factory::buildUpdateChecker(
+	'https://github.com/clayharmon/bb-lazy-load/',
+	__FILE__,
+	'bbll'
+);
+$bbll_update_checker->getVcsApi()->enableReleaseAssets();
 
 function bbll_load_module_add_filters() {
   if ( class_exists( 'FLBuilder' ) ) {
