@@ -20,7 +20,7 @@ function bbll_load_module_add_filters() {
     add_filter( 'fl_builder_column_attributes', 'bbll_builder_render_attrs_col', 10, 2 );
 
     $bbll_options = get_option('bbll_store');
-    if($bbll_options['image_html']){
+    if(isset($bbll_options['image_html']) && $bbll_options['image_html']){
       add_filter( 'fl_builder_render_module_content', 'bbll_builder_render_module_html', 10, 2);
     }
 
@@ -79,7 +79,7 @@ function bbll_add_settings_page(){
 add_action( 'admin_menu', 'bbll_add_settings_page' );
 function bbll_checkbox_html($options_array, $option_name, $label){
   $bbll_options = $options_array;
-  $ischecked = ($bbll_options[$option_name]) ? 'checked' : '';
+  $ischecked = (isset($bbll_options[$option_name]) && $bbll_options[$option_name]) ? 'checked' : '';
 
   $output = '';
   $output .= '<div style="padding:5px 0;">';
@@ -89,7 +89,6 @@ function bbll_checkbox_html($options_array, $option_name, $label){
 }
 function bbll_settings_html(){
   $bbll_options = get_option('bbll_store');
-  //var_dump($bbll_options);
   ?>
   <div class="wrap">
     <h1>Beaver Builder Lazy Load</h1>
@@ -118,16 +117,16 @@ function bbll_builder_render_attrs_row( $attrs, $container ) {
   $image = $container->settings->bg_image_src;
 
   if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
-    if($bbll_options['webp']){
+    if(isset($bbll_options['webp']) && $bbll_options['webp']){
       $image .= '.webp';
     }
   }
 
-  if($container->settings->bg_type === 'photo' && $bbll_options['row_images']){
+  if($container->settings->bg_type === 'photo' && isset($bbll_options['row_images']) && $bbll_options['row_images']){
     $attrs['data-bb-lazy-load-bgurl'] = $image;
   }
 
-  if($container->settings->bg_type === 'parallax' && $bbll_options['row_parallax']){
+  if($container->settings->bg_type === 'parallax' && isset($bbll_options['row_parallax']) && $bbll_options['row_parallax']){
     $attrs['data-parallax-image'] = '';
     $attrs['data-bb-lazy-load-bgurl'] = $image;
   }
@@ -141,12 +140,12 @@ function bbll_builder_render_attrs_col( $attrs, $container ) {
   $image = $container->settings->bg_image_src;
 
   if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
-    if($bbll_options['webp']){
+    if(isset($bbll_options['webp']) && $bbll_options['webp']){
       $image .= '.webp';
     }
   }
 
-  if($container->settings->bg_type === 'photo' && $bbll_options['column_images']){
+  if($container->settings->bg_type === 'photo' && isset($bbll_options['column_images']) && $bbll_options['column_images']){
     $attrs['data-bb-lazy-load-bgurl'] = $image;
   }
   return $attrs;
@@ -174,12 +173,12 @@ function bbll_builder_render_module_html($content, $module) {
 function bbll_builder_render_css( $css, $nodes, $global_settings ) {
   $matches = array();
   $bbll_options = get_option('bbll_store');
-  if ($bbll_options['row_images'] && preg_match_all('/\.fl-node-(.*?)\ >\ (?:.fl-row-content-wrap)\ {[ \n]?[ \t]?background-image:[ ]?url\([\'"]?(.*?)\)/', $css, $matches)) {
+  if (isset($bbll_options['row_images']) && $bbll_options['row_images'] && preg_match_all('/\.fl-node-(.*?)\ >\ (?:.fl-row-content-wrap)\ {[ \n]?[ \t]?background-image:[ ]?url\([\'"]?(.*?)\)/', $css, $matches)) {
     for($i=0;$i<count($matches[2]);$i++){
       $css = str_replace("\n\tbackground-image: url(".$matches[2][$i].");\n", "", $css);
     }
   }
-  if ($bbll_options['column_images'] && preg_match_all('/\.fl-node-(.*?)\ >\ (?:.fl-col-content)\ {[ \n]?[ \t]?background-image:[ ]?url\([\'"]?(.*?)\)/', $css, $matches)) {
+  if (isset($bbll_options['column_images']) && $bbll_options['column_images'] && preg_match_all('/\.fl-node-(.*?)\ >\ (?:.fl-col-content)\ {[ \n]?[ \t]?background-image:[ ]?url\([\'"]?(.*?)\)/', $css, $matches)) {
     for($i=0;$i<count($matches[2]);$i++){
       $css = str_replace("\n\tbackground-image: url(".$matches[2][$i].");\n", "", $css);
     }
