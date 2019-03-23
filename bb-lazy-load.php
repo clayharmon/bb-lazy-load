@@ -20,13 +20,14 @@ function bbll_load_module_add_filters() {
     add_filter( 'fl_builder_column_attributes', 'bbll_builder_render_attrs_col', 10, 2 );
 
     $bbll_options = get_option('bbll_store');
-    if(isset($bbll_options['image_html']) && $bbll_options['image_html']){
+    if(isset($bbll_options['image_html']) && $bbll_options['image_html'] && !isset($_GET['fl_builder'])){
       add_filter( 'fl_builder_render_module_content', 'bbll_builder_render_module_html', 10, 2);
     }
-
-    add_filter( 'fl_builder_render_css', 'bbll_builder_render_css', 10, 3 );
-    add_action( 'wp_footer', 'bbll_lazyload_bgs' );
-    add_action( 'wp_head', 'bbll_custom_styles' );
+    if(!isset($_GET['fl_builder'])){
+      add_filter( 'fl_builder_render_css', 'bbll_builder_render_css', 10, 3 );
+      add_action( 'wp_footer', 'bbll_lazyload_bgs' );
+      add_action( 'wp_head', 'bbll_custom_styles' );
+    }
   }
 }
 add_action( 'init', 'bbll_load_module_add_filters' );
@@ -213,6 +214,7 @@ echo '<script>document.addEventListener("DOMContentLoaded", function() {
               });
             }
             if(html){
+              lazyImage.className += " " + "bbll-photo-img";
               lazyImage.innerHTML = html.innerHTML;
               lazyImages = lazyImages.filter(function(image) {
                 return image !== html;
