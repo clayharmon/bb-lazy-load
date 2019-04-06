@@ -3,10 +3,10 @@
 Plugin Name: Beaver Builder - Lazy Load
 Description: Lazy loads background images set using Beaver Builder. Also will serve .webp if setting is selected.
 Author: Clay Harmon
-Version: 0.3.1
+Version: 0.4
 */
 
-require 'plugin-update-checker/plugin-update-checker.php';
+require __DIR__.'/vendor/plugin-update-checker/plugin-update-checker.php';
 $bbll_update_checker = Puc_v4_Factory::buildUpdateChecker(
 	'https://github.com/clayharmon/bb-lazy-load/',
 	__FILE__,
@@ -14,19 +14,19 @@ $bbll_update_checker = Puc_v4_Factory::buildUpdateChecker(
 );
 $bbll_update_checker->getVcsApi()->enableReleaseAssets();
 
+
 function bbll_load_module_add_filters() {
   if ( class_exists( 'FLBuilder' ) ) {
     add_filter( 'fl_builder_row_attributes', 'bbll_builder_render_attrs_row', 10, 2 );
     add_filter( 'fl_builder_column_attributes', 'bbll_builder_render_attrs_col', 10, 2 );
+    add_filter('the_content', 'bbll_builder_render_content', 10, 1);
 
-    $bbll_options = get_option('bbll_store');
-    if(isset($bbll_options['image_html']) && $bbll_options['image_html'] && !isset($_GET['fl_builder'])){
-      add_filter( 'fl_builder_render_module_content', 'bbll_builder_render_module_html', 10, 2);
-    }
     if(!isset($_GET['fl_builder'])){
       add_filter( 'fl_builder_render_css', 'bbll_builder_render_css', 10, 3 );
-      add_action( 'wp_footer', 'bbll_lazyload_bgs' );
-      add_action( 'wp_head', 'bbll_custom_styles' );
+      wp_enqueue_script( 'bbll-intersection-observer', 'https://cdn.jsdelivr.net/npm/intersection-observer@0.5.1/intersection-observer.min.js', array('jquery'), '0.5.1', true );
+      wp_enqueue_script( 'bbll-lazyload', 'https://cdn.jsdelivr.net/npm/vanilla-lazyload@11.0.6/dist/lazyload.min.js', array('jquery'), '11.0.6', true );
+      wp_enqueue_script( 'bbll-custom', plugins_url( '/assets/scripts.min.js', __FILE__ ), array('jquery'), '0.1', true);
+      wp_enqueue_style( 'bbll-styles', plugins_url( '/assets/styles.min.css', __FILE__ ),'', '0.1');
     }
   }
 }
@@ -111,11 +111,52 @@ function bbll_settings_html(){
   <?php
 }
 
+function bbll_builder_render_content($content){
+
+  $doc = new DOMDocument();
+  $doc->loadHTML($content);
+
+  $xpath = new DomXpath($doc);
+  foreach ($xpath->query('//@data-bbll') as $el) {
+    $url = $el->nodeValue;
+    $child = $el->ownerElement->childNodes->item(1);
+    $class = $child->getAttribute('class');
+    $child->setAttribute('class', $class . ' bbll');
+    $child->setAttribute('data-bg', $url);
+  }
+  $bbll_options = get_option('bbll_store');
+  if(isset($bbll_options['image_html']) && $bbll_options['image_html'] && !isset($_GET['fl_builder'])){
+    $images = $doc->getElementsByTagName('img');
+    foreach($images as $img){
+      $src = $img->getAttribute('src');
+      $srcset = $img->getAttribute('srcset');
+      $sizes = $img->getAttribute('sizes');
+      $class = $img->getAttribute('class');
+
+      $img->removeAttribute('src');
+      $img->removeAttribute('srcset');
+      $img->removeAttribute('sizes');
+
+      $img->setAttribute('class', $class . ' bbll');
+      $img->setAttribute('data-src', $src);
+      $img->setAttribute('data-srcset', $srcset);
+      $img->setAttribute('data-sizes', $sizes);
+    }
+  }
+  
+  return $doc->saveHTML();
+}
+
 function bbll_builder_render_attrs_row( $attrs, $container ) {
-  if(!isset($container->settings->bg_image_src)) return $attrs;
+  if(isset($container->settings->bg_image_src)){
+    $image = $container->settings->bg_image_src;
+  } else if(isset($container->settings->bg_image_src)){
+    $image = $container->settings->bg_parallax_image_src;
+  } else {
+    return $attrs;
+  }
 
   $bbll_options = get_option('bbll_store');
-  $image = $container->settings->bg_image_src;
 
   if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
     if(isset($bbll_options['webp']) && $bbll_options['webp']){
@@ -124,12 +165,12 @@ function bbll_builder_render_attrs_row( $attrs, $container ) {
   }
 
   if($container->settings->bg_type === 'photo' && isset($bbll_options['row_images']) && $bbll_options['row_images']){
-    $attrs['data-bb-lazy-load-bgurl'] = $image;
+    $attrs['data-bbll'] = 'url('.$image.')';
   }
 
   if($container->settings->bg_type === 'parallax' && isset($bbll_options['row_parallax']) && $bbll_options['row_parallax']){
     $attrs['data-parallax-image'] = '';
-    $attrs['data-bb-lazy-load-bgurl'] = $image;
+    $attrs['data-bbll'] = 'url('.$image.')';
   }
   return $attrs;
 }
@@ -147,28 +188,9 @@ function bbll_builder_render_attrs_col( $attrs, $container ) {
   }
 
   if($container->settings->bg_type === 'photo' && isset($bbll_options['column_images']) && $bbll_options['column_images']){
-    $attrs['data-bb-lazy-load-bgurl'] = $image;
+    $attrs['data-bbll'] = 'url('.$image.')';
   }
   return $attrs;
-}
-
-function bbll_builder_render_module_html($content, $module) {
-  $matches = array();
-  $images = array();
-  // we'll need to activate this via a setting.
-  /*
-  if(preg_match_all('/(https?:\/\/.*\.(?:png|jpg))/i', $content, $images)){
-    for($i=0;$i<count($images[1]);$i++){
-      $content = str_replace($images[1][$i], $images[1][$i].'.webp', $content);
-    }
-  }
-  */
-  if(preg_match_all('/<img(.*?)>/', $content, $matches)){
-    for($i=0;$i<count($matches[1]);$i++){
-      $content = str_replace('<img'.$matches[1][$i].'>', '<noscript data-bbll-html="1"><img'.$matches[1][$i].'></noscript>', $content);
-    }
-  }
-  return $content;
 }
 
 function bbll_builder_render_css( $css, $nodes, $global_settings ) {
@@ -187,74 +209,17 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
   return $css;
 }
 
-function bbll_lazyload_bgs(){
-echo '<script>document.addEventListener("DOMContentLoaded", function() {
-  let lazyImages = [].slice.call(document.querySelectorAll("[data-bb-lazy-load-bgurl], [data-bbll-html]"));
-  let active = false;
-
-  const lazyLoad = function() {
-    if (active === false) {
-      active = true;
-
-      setTimeout(function() {
-        lazyImages.forEach(function(lazyImage) {
-          var html = lazyImage.dataset.bbllHtml;
-          if(html){
-            html = lazyImage;
-            lazyImage = lazyImage.parentElement;
-          }
-          if ((lazyImage.getBoundingClientRect().top <= window.innerHeight && lazyImage.getBoundingClientRect().bottom >= 0) && getComputedStyle(lazyImage).display !== "none") {
-            var src = lazyImage.dataset.bbLazyLoadBgurl;
-            if(src){
-              var wrapper = lazyImage.querySelectorAll(".fl-row-content-wrap, .fl-col-content");
-              wrapper[0].style.backgroundImage = "url("+src+")";
-              // lazyImage.removeAttribute("data-bb-lazy-load-bgurl");
-              lazyImages = lazyImages.filter(function(image) {
-                return image !== lazyImage;
-              });
-            }
-            if(html){
-              lazyImage.className += " " + "bbll-photo-img";
-              lazyImage.innerHTML = html.innerHTML;
-              lazyImages = lazyImages.filter(function(image) {
-                return image !== html;
-              });
-            }
-
-
-
-            if (lazyImages.length === 0) {
-              document.removeEventListener("scroll", lazyLoad);
-              window.removeEventListener("resize", lazyLoad);
-              window.removeEventListener("orientationchange", lazyLoad);
-            }
-          }
-        });
-
-        active = false;
-      }, 200);
-    }
-  };
-  lazyLoad();
-
-  document.addEventListener("scroll", lazyLoad);
-  window.addEventListener("resize", lazyLoad);
-  window.addEventListener("orientationchange", lazyLoad);
-});</script>';
-}
-
-
 function bbll_custom_styles(){
   echo '
   <style>
-  div[data-bb-lazy-load-bgurl].fl-row .fl-row-content-wrap, div[data-bb-lazy-load-bgurl].fl-col .fl-col-content{
+  div[data-bg].fl-row .fl-row-content-wrap, div[data-bg].fl-col .fl-col-content{
     background-image: url(data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==);
   }
-  div[data-bb-lazy-load-bgurl].fl-row .fl-row-content-wrap, div[data-bb-lazy-load-bgurl].fl-col .fl-col-content{
+  div[data-bg].fl-row .fl-row-content-wrap, div[data-bg].fl-col .fl-col-content{
     -webkit-transition: background-image 0.3s;
     transition: background-image 0.3s;
   }
-  .bbll-photo-img {
+  .bbll {
     -webkit-animation: bbllfadein 0.3s; /* Safari, Chrome and Opera > 12.1 */
        -moz-animation: bbllfadein 0.3s; /* Firefox < 16 */
         -ms-animation: bbllfadein 0.3s; /* Internet Explorer */
