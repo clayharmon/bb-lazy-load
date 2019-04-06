@@ -3,7 +3,7 @@
 Plugin Name: Beaver Builder - Lazy Load
 Description: Lazy loads background images set using Beaver Builder. Also will serve .webp if setting is selected.
 Author: Clay Harmon
-Version: 0.4
+Version: 0.4.1
 */
 
 require __DIR__.'/vendor/plugin-update-checker/plugin-update-checker.php';
@@ -150,7 +150,7 @@ function bbll_builder_render_content($content){
 function bbll_builder_render_attrs_row( $attrs, $container ) {
   if(isset($container->settings->bg_image_src)){
     $image = $container->settings->bg_image_src;
-  } else if(isset($container->settings->bg_image_src)){
+  } else if(isset($container->settings->bg_parallax_image_src)){
     $image = $container->settings->bg_parallax_image_src;
   } else {
     return $attrs;
@@ -207,52 +207,4 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
     }
   }
   return $css;
-}
-
-function bbll_custom_styles(){
-  echo '
-  <style>
-  div[data-bg].fl-row .fl-row-content-wrap, div[data-bg].fl-col .fl-col-content{
-    background-image: url(data:image/gif;base64,R0lGODlhAQABAAAAACH5BAEKAAEALAAAAAABAAEAAAICTAEAOw==);
-  }
-  div[data-bg].fl-row .fl-row-content-wrap, div[data-bg].fl-col .fl-col-content{
-    -webkit-transition: background-image 0.3s;
-    transition: background-image 0.3s;
-  }
-  .bbll {
-    -webkit-animation: bbllfadein 0.3s; /* Safari, Chrome and Opera > 12.1 */
-       -moz-animation: bbllfadein 0.3s; /* Firefox < 16 */
-        -ms-animation: bbllfadein 0.3s; /* Internet Explorer */
-         -o-animation: bbllfadein 0.3s; /* Opera < 12.1 */
-            animation: bbllfadein 0.3s;
-  }
-  @keyframes bbllfadein {
-    from { opacity: 0; }
-    to   { opacity: 1; }
-  }
-
-  /* Firefox < 16 */
-  @-moz-keyframes bbllfadein {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-  }
-
-  /* Safari, Chrome and Opera > 12.1 */
-  @-webkit-keyframes bbllfadein {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-  }
-
-  /* Internet Explorer */
-  @-ms-keyframes bbllfadein {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-  }
-
-  /* Opera < 12.1 */
-  @-o-keyframes bbllfadein {
-      from { opacity: 0; }
-      to   { opacity: 1; }
-  }
- </style>';
 }
