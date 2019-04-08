@@ -113,6 +113,10 @@ function bbll_settings_html(){
 
 function bbll_builder_render_content($content){
 
+  if(empty($content)){
+    return $content;
+  }
+  
   $doc = new DOMDocument();
   $doc->loadHTML($content);
 
