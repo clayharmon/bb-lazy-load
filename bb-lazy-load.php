@@ -140,16 +140,17 @@ function bbll_builder_render_content($content){
       if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
         if(isset($bbll_options['webp']) && $bbll_options['webp']){
           $src .= '.webp';
-        }
-        $old_srcset = explode(' ', $srcset);
-        $new_srcset = array();
-        for($i = 0; $i < count($old_srcset); $i++){
-          if($i % 2 === 0){
-            $old_srcset[$i] .= '.webp';
+          
+          $old_srcset = explode(' ', $srcset);
+          $new_srcset = array();
+          for($i = 0; $i < count($old_srcset); $i++){
+            if($i % 2 === 0){
+              $old_srcset[$i] .= '.webp';
+            }
+            array_push($new_srcset, $old_srcset[$i]);
           }
-          array_push($new_srcset, $old_srcset[$i]);
+          $srcset = implode(' ', $new_srcset);
         }
-        $srcset = implode(' ', $new_srcset);
       }
 
       $img->removeAttribute('src');
