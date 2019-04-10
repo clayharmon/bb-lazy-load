@@ -32,40 +32,50 @@ function bbll_load_module_add_filters() {
 }
 add_action( 'init', 'bbll_load_module_add_filters' );
 
+function bbll_admin_nonce_notice() {
+  if(isset($_GET['nonce_verify']) && $_GET['nonce_verify'] === 'false'){
+    echo '<div class="error notice"><p>Sorry, your nonce did not verify. Please try again.</p></div>';
+  }
+}
+add_action( 'admin_notices', 'bbll_admin_nonce_notice' );
+
 add_action( 'admin_action_bbll_admin_form', 'bbll_admin_form_action' );
 function bbll_admin_form_action(){
-    //var_dump($_POST);
-    $bbll_options = [];
-
-    if( isset( $_POST['bbll_option_webp'] ) ){
-      $value = esc_sql( $_POST['bbll_option_webp'] );
-      $bbll_options['webp'] = $value;
-    }
-
-    if( isset( $_POST['bbll_option_column_images'] ) ){
-      $value = esc_sql( $_POST['bbll_option_column_images'] );
-      $bbll_options['column_images'] = $value;
-    }
-
-    if( isset( $_POST['bbll_option_row_images'] ) ){
-      $value = esc_sql( $_POST['bbll_option_row_images'] );
-      $bbll_options['row_images'] = $value;
-    }
-
-    if( isset( $_POST['bbll_option_row_parallax'] ) ){
-      $value = esc_sql( $_POST['bbll_option_row_parallax'] );
-      $bbll_options['row_parallax'] = $value;
-    }
-
-    if( isset( $_POST['bbll_option_image_html'] ) ){
-      $value = esc_sql( $_POST['bbll_option_image_html'] );
-      $bbll_options['image_html'] = $value;
-    }
-
-    update_option('bbll_store', $bbll_options);
-    FLBuilderModel::delete_asset_cache_for_all_posts();
-    wp_redirect( $_SERVER['HTTP_REFERER'] );
+  if ( !isset( $_POST['bbll_admin_verify'] ) || !wp_verify_nonce( $_POST['bbll_admin_verify'], 'bbll_admin_update_settings' ) ) {
+    wp_redirect( $_SERVER['HTTP_REFERER'] . '&nonce_verify=false');
     exit();
+  }
+  $bbll_options = [];
+
+  if( isset( $_POST['bbll_option_webp'] ) ){
+    $value = esc_sql( $_POST['bbll_option_webp'] );
+    $bbll_options['webp'] = $value;
+  }
+
+  if( isset( $_POST['bbll_option_column_images'] ) ){
+    $value = esc_sql( $_POST['bbll_option_column_images'] );
+    $bbll_options['column_images'] = $value;
+  }
+
+  if( isset( $_POST['bbll_option_row_images'] ) ){
+    $value = esc_sql( $_POST['bbll_option_row_images'] );
+    $bbll_options['row_images'] = $value;
+  }
+
+  if( isset( $_POST['bbll_option_row_parallax'] ) ){
+    $value = esc_sql( $_POST['bbll_option_row_parallax'] );
+    $bbll_options['row_parallax'] = $value;
+  }
+
+  if( isset( $_POST['bbll_option_image_html'] ) ){
+    $value = esc_sql( $_POST['bbll_option_image_html'] );
+    $bbll_options['image_html'] = $value;
+  }
+
+  update_option('bbll_store', $bbll_options);
+  FLBuilderModel::delete_asset_cache_for_all_posts();
+  wp_redirect( $_SERVER['HTTP_REFERER'] . '&nonce_verify=true' );
+  exit();
 }
 
 function bbll_add_settings_page(){
@@ -103,6 +113,8 @@ function bbll_settings_html(){
       <?php echo bbll_checkbox_html($bbll_options, 'row_parallax', 'Enable lazy loading for row parallax images?'); ?>
 
       <?php echo bbll_checkbox_html($bbll_options, 'image_html', 'Enable lazy load for all Beaver Builder img tags? <strong>(Experimental)</strong>'); ?>
+
+      <?php wp_nonce_field( 'bbll_admin_update_settings', 'bbll_admin_verify' ); ?>
       
       <input type="hidden" name="action" value="bbll_admin_form" />
       <input style="margin:10px 0;" type="submit" name="submit" id="submit" class="button button-primary" value="Save Changes" />
