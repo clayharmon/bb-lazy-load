@@ -130,7 +130,12 @@ function bbll_builder_render_content($content){
   }
   
   $doc = new DOMDocument();
+  // We're dealing with non-well-formed HTML
+  // Solution: https://stackoverflow.com/questions/1148928/disable-warnings-when-loading-non-well-formed-html-by-domdocument-php
+  $libxml_error_state = libxml_use_internal_errors(true);
   $doc->loadHTML($content);
+  libxml_clear_errors();
+  libxml_use_internal_errors($libxml_error_state);
 
   $xpath = new DomXpath($doc);
   foreach ($xpath->query('//@data-bbll') as $el) {
