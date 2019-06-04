@@ -3,7 +3,7 @@
 Plugin Name: Beaver Builder - Lazy Load
 Description: Lazy loads background images set using Beaver Builder. Also will serve .webp if setting is selected.
 Author: Clay Harmon
-Version: 0.4.4
+Version: 0.4.5
 */
 
 require __DIR__.'/vendor/plugin-update-checker/plugin-update-checker.php';
@@ -17,11 +17,11 @@ $bbll_update_checker->getVcsApi()->enableReleaseAssets();
 
 function bbll_load_module_add_filters() {
   if ( class_exists( 'FLBuilder' ) ) {
-    add_filter( 'fl_builder_row_attributes', 'bbll_builder_render_attrs_row', 10, 2 );
-    add_filter( 'fl_builder_column_attributes', 'bbll_builder_render_attrs_col', 10, 2 );
-    add_filter('the_content', 'bbll_builder_render_content', 10, 1);
 
     if(!isset($_GET['fl_builder'])){
+      add_filter( 'fl_builder_row_attributes', 'bbll_builder_render_attrs_row', 10, 2 );
+      add_filter( 'fl_builder_column_attributes', 'bbll_builder_render_attrs_col', 10, 2 );
+      add_filter('the_content', 'bbll_builder_render_content', 10, 1);
       add_filter( 'fl_builder_render_css', 'bbll_builder_render_css', 10, 3 );
       wp_enqueue_script( 'bbll-intersection-observer', 'https://cdn.jsdelivr.net/npm/intersection-observer@0.5.1/intersection-observer.min.js', array(), '0.5.1', true );
       wp_enqueue_script( 'bbll-lazyload', 'https://cdn.jsdelivr.net/npm/vanilla-lazyload@11.0.6/dist/lazyload.min.js', array(), '11.0.6', true );
@@ -186,10 +186,19 @@ function bbll_builder_render_content($content){
 }
 
 function bbll_builder_render_attrs_row( $attrs, $container ) {
-  if(isset($container->settings->bg_image_src)){
-    $image = $container->settings->bg_image_src;
-  } else if(isset($container->settings->bg_parallax_image_src)){
-    $image = $container->settings->bg_parallax_image_src;
+  $type = $container->settings->bg_type;
+  if($type === 'photo'){
+    if(isset($container->settings->bg_image_src)){
+      $image = $container->settings->bg_image_src;
+    } else {
+      return $attrs;
+    }
+  } else if($type === 'parallax'){
+    if(isset($container->settings->bg_parallax_image_src)){
+      $image = $container->settings->bg_parallax_image_src;
+    } else {
+      return $attrs;
+    }
   } else {
     return $attrs;
   }
