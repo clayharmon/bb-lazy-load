@@ -133,6 +133,7 @@ function bbll_builder_render_content($content){
   // We're dealing with non-well-formed HTML
   // Solution: https://stackoverflow.com/questions/1148928/disable-warnings-when-loading-non-well-formed-html-by-domdocument-php
   $libxml_error_state = libxml_use_internal_errors(true);
+  $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
   $doc->loadHTML($content);
   libxml_clear_errors();
   libxml_use_internal_errors($libxml_error_state);
