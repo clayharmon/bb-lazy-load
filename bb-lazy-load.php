@@ -3,7 +3,7 @@
 Plugin Name: Beaver Builder - Lazy Load
 Description: Lazy loads background images set using Beaver Builder. Also will serve .webp if setting is selected.
 Author: Clay Harmon
-Version: 0.4.5
+Version: 0.4.6
 */
 
 require __DIR__.'/vendor/plugin-update-checker/plugin-update-checker.php';
@@ -158,16 +158,18 @@ function bbll_builder_render_content($content){
       if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
         if(isset($bbll_options['webp']) && $bbll_options['webp']){
           $src .= '.webp';
-          
-          $old_srcset = explode(' ', $srcset);
-          $new_srcset = array();
-          for($i = 0; $i < count($old_srcset); $i++){
-            if($i % 2 === 0){
-              $old_srcset[$i] .= '.webp';
+
+          if($srcset !== '' || !empty($srcset)){
+            $old_srcset = explode(' ', $srcset);
+            $new_srcset = array();
+            for($i = 0; $i < count($old_srcset); $i++){
+              if($i % 2 === 0){
+                $old_srcset[$i] .= '.webp';
+              }
+              array_push($new_srcset, $old_srcset[$i]);
             }
-            array_push($new_srcset, $old_srcset[$i]);
+            $srcset = implode(' ', $new_srcset);
           }
-          $srcset = implode(' ', $new_srcset);
         }
       }
 
