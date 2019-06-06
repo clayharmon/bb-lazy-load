@@ -159,15 +159,17 @@ function bbll_builder_render_content($content){
         if(isset($bbll_options['webp']) && $bbll_options['webp']){
           $src .= '.webp';
           
-          $old_srcset = explode(' ', $srcset);
-          $new_srcset = array();
-          for($i = 0; $i < count($old_srcset); $i++){
-            if($i % 2 === 0){
-              $old_srcset[$i] .= '.webp';
+          if($srcset !== '' || !empty($srcset)){
+            $old_srcset = explode(' ', $srcset);
+            $new_srcset = array();
+            for($i = 0; $i < count($old_srcset); $i++){
+              if($i % 2 === 0){
+                $old_srcset[$i] .= '.webp';
+              }
+              array_push($new_srcset, $old_srcset[$i]);
             }
-            array_push($new_srcset, $old_srcset[$i]);
+            $srcset = implode(' ', $new_srcset);
           }
-          $srcset = implode(' ', $new_srcset);
         }
       }
 
