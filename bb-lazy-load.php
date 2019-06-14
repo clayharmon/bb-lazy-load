@@ -21,7 +21,7 @@ function bbll_load_module_add_filters() {
     if(!isset($_GET['fl_builder'])){
       add_filter( 'fl_builder_row_attributes', 'bbll_builder_render_attrs_row', 10, 2 );
       add_filter( 'fl_builder_column_attributes', 'bbll_builder_render_attrs_col', 10, 2 );
-      add_filter('the_content', 'bbll_builder_render_content', 10, 1);
+      add_filter('bbll_final_output', 'bbll_builder_render_content', 10, 1);
       add_filter( 'fl_builder_render_css', 'bbll_builder_render_css', 10, 3 );
       wp_enqueue_script( 'bbll-intersection-observer', 'https://cdn.jsdelivr.net/npm/intersection-observer@0.5.1/intersection-observer.min.js', array(), '0.5.1', true );
       wp_enqueue_script( 'bbll-lazyload', 'https://cdn.jsdelivr.net/npm/vanilla-lazyload@11.0.6/dist/lazyload.min.js', array(), '11.0.6', true );
@@ -123,18 +123,57 @@ function bbll_settings_html(){
   <?php
 }
 
+// We need to grab the final HTML output.
+// https://stackoverflow.com/questions/772510/wordpress-filter-to-modify-final-html-output
+
+add_action( 'init', 'bbll_process_start' );
+function bbll_process_start() { ob_start(); }
+
+add_action( 'shutdown', 'bbll_process_end', 0 );
+function bbll_process_end() {
+    $final = '';
+    
+    $levels = ob_get_level();
+
+    for ($i = 0; $i < $levels; $i++) {
+        $final .= ob_get_clean();
+    }
+
+    // Apply any filters to the final output
+    echo apply_filters('bbll_final_output', $final);
+}
+
 function bbll_builder_render_content($content){
 
   if(empty($content)){
     return $content;
   }
+  // DOMDocument messes up scripts.. We need to remove them and re-add them.
+  // https://stackoverflow.com/questions/33426788/domdocument-removing-closing-tag-within-script-tags
+  $pattern = "/<script[\s\S]*?>[\s\S]*?<\/script>/";
+  preg_match_all($pattern, $content, $matches);
+  $simple = array();
+  $complete = array();
+  $matches = array_unique( $matches[0] );
+
+  foreach ( $matches as $match ) {
+    $id = uniqid('script_');
+    $uniqueScript = "<script id=\"$id\"></script>";
+    $simple[] = $uniqueScript;
+    $complete[] = $match;
+  }
+  $content = str_replace($complete, $simple, $content);
   
   $doc = new DOMDocument();
   // We're dealing with non-well-formed HTML
   // Solution: https://stackoverflow.com/questions/1148928/disable-warnings-when-loading-non-well-formed-html-by-domdocument-php
   $libxml_error_state = libxml_use_internal_errors(true);
+
+  // Convert to UTF-8
   $content = mb_convert_encoding($content, 'HTML-ENTITIES', 'UTF-8');
+
   $doc->loadHTML($content);
+
   libxml_clear_errors();
   libxml_use_internal_errors($libxml_error_state);
 
@@ -146,6 +185,7 @@ function bbll_builder_render_content($content){
     $child->setAttribute('class', $class . ' bbll');
     $child->setAttribute('data-bg', $url);
   }
+
   $bbll_options = get_option('bbll_store');
   if(isset($bbll_options['image_html']) && $bbll_options['image_html'] && !isset($_GET['fl_builder'])){
     $images = $doc->getElementsByTagName('img');
@@ -159,7 +199,7 @@ function bbll_builder_render_content($content){
         if(isset($bbll_options['webp']) && $bbll_options['webp']){
           $src .= '.webp';
 
-          if($srcset !== '' || !empty($srcset)){
+          if(!empty($srcset)){
             $old_srcset = explode(' ', $srcset);
             $new_srcset = array();
             for($i = 0; $i < count($old_srcset); $i++){
@@ -183,8 +223,9 @@ function bbll_builder_render_content($content){
       $img->setAttribute('data-sizes', $sizes);
     }
   }
-  
-  return $doc->saveHTML();
+  $content = $doc->saveHTML();
+  $content = str_replace($simple, $complete, $content);
+  return $content;
 }
 
 function bbll_builder_render_attrs_row( $attrs, $container ) {
@@ -256,4 +297,11 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
     }
   }
   return $css;
+}
+
+
+register_deactivation_hook( __FILE__, 'bbll_deactivation' );
+
+function bbll_deactivation(){
+  FLBuilderModel::delete_asset_cache_for_all_posts();
 }
