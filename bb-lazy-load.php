@@ -21,7 +21,7 @@ function bbll_load_module_add_filters() {
     if(!isset($_GET['fl_builder'])){
       add_filter( 'fl_builder_row_attributes', 'bbll_builder_render_attrs_row', 10, 2 );
       add_filter( 'fl_builder_column_attributes', 'bbll_builder_render_attrs_col', 10, 2 );
-      if(!has_filter('rocket_buffer')){
+      if(has_filter('rocket_buffer')){
         add_filter( 'rocket_buffer', 'bbll_builder_render_content', 10, 1);
       } else {
         add_filter('bbll_final_output', 'bbll_builder_render_content', 0, 1);
