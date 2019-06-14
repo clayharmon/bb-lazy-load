@@ -148,6 +148,21 @@ function bbll_builder_render_content($content){
   if(empty($content)){
     return $content;
   }
+  // DOMDocument messes up scripts.. We need to remove them and re-add them.
+  // https://stackoverflow.com/questions/33426788/domdocument-removing-closing-tag-within-script-tags
+  $pattern = "/<script[\s\S]*?>[\s\S]*?<\/script>/";
+  preg_match_all($pattern, $content, $matches);
+  $simple = array();
+  $complete = array();
+  $matches = array_unique( $matches[0] );
+
+  foreach ( $matches as $match ) {
+    $id = uniqid('script_');
+    $uniqueScript = "<script id=\"$id\"></script>";
+    $simple[] = $uniqueScript;
+    $complete[] = $match;
+  }
+  $content = str_replace($complete, $simple, $content);
   
   $doc = new DOMDocument();
   // We're dealing with non-well-formed HTML
@@ -208,8 +223,9 @@ function bbll_builder_render_content($content){
       $img->setAttribute('data-sizes', $sizes);
     }
   }
-  
-  return $doc->saveHTML();
+  $content = $doc->saveHTML();
+  $content = str_replace($simple, $complete, $content);
+  return $content;
 }
 
 function bbll_builder_render_attrs_row( $attrs, $container ) {
