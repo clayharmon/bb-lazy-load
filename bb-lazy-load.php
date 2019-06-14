@@ -282,3 +282,10 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
   }
   return $css;
 }
+
+
+register_deactivation_hook( __FILE__, 'bbll_deactivation' );
+
+function bbll_deactivation(){
+  FLBuilderModel::delete_asset_cache_for_all_posts();
+}
