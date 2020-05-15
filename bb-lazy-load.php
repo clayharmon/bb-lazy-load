@@ -3,7 +3,7 @@
 Plugin Name: Beaver Builder - Lazy Load
 Description: Lazy loads background images set using Beaver Builder. Also will serve .webp if setting is selected.
 Author: Clay Harmon
-Version: 0.4.7.2
+Version: 0.4.8
 */
 
 require __DIR__.'/vendor/plugin-update-checker/plugin-update-checker.php';
@@ -18,7 +18,7 @@ $bbll_update_checker->getVcsApi()->enableReleaseAssets();
 function bbll_load_module_add_filters() {
   if ( class_exists( 'FLBuilder' ) ) {
 
-    if(!isset($_GET['fl_builder'])){
+    if(!isset($_GET['fl_builder']) && !is_admin() && !wp_doing_ajax()){
       add_filter( 'fl_builder_row_attributes', 'bbll_builder_render_attrs_row', 10, 2 );
       add_filter( 'fl_builder_column_attributes', 'bbll_builder_render_attrs_col', 10, 2 );
       if( has_filter('rocket_buffer') ){
@@ -254,7 +254,10 @@ function bbll_builder_render_attrs_row( $attrs, $container ) {
 
   if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
     if(isset($bbll_options['webp']) && $bbll_options['webp']){
-      $image .= '.webp';
+      $extension = array_pop( explode('.', $image) );
+      if($extension === 'jpg' || $extension === 'png') {
+        $image .= '.webp';
+      } 
     }
   }
 
@@ -277,7 +280,10 @@ function bbll_builder_render_attrs_col( $attrs, $container ) {
 
   if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
     if(isset($bbll_options['webp']) && $bbll_options['webp']){
-      $image .= '.webp';
+      $extension = array_pop( explode('.', $image) );
+      if($extension === 'jpg' || $extension === 'png') {
+        $image .= '.webp';
+      } 
     }
   }
 

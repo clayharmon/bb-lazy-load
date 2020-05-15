@@ -2,7 +2,7 @@
 Contributors: Clay Harmon
 Tags: Beaver Builder, Lazy Load, Site Speed
 Requires at least: 4.9.8
-Tested up to: 5.1.1
+Tested up to: 5.4.1
 Requires PHP: 5.3
 Stable tag: trunk
 License: MIT License
