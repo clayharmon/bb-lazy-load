@@ -135,7 +135,10 @@ function bbll_settings_html(){
 // https://stackoverflow.com/questions/772510/wordpress-filter-to-modify-final-html-output
 
 $bbll_active_plugins = apply_filters( 'active_plugins', get_option( 'active_plugins' ) );
-if(!in_array( 'litespeed-cache/litespeed-cache.php', $bbll_active_plugins)){
+if(
+  !in_array( 'litespeed-cache/litespeed-cache.php', $bbll_active_plugins) && 
+  !in_array( 'wp-rocket/wp-rocket.php', $bbll_active_plugins)
+  ){
   add_action( 'init', 'bbll_process_start' );
   add_action( 'shutdown', 'bbll_process_end', 0 );
 }
