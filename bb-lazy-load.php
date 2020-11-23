@@ -117,7 +117,7 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
 
   $bg_matches = array();
   $bg_store = array();
-  if(preg_match_all('/(.*?) {\n.*?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', $css, $bg_matches)) {
+  if(preg_match_all('/(.*?) {\n.*?(?:\n.*?)?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', $css, $bg_matches)) {
     for($i=0;$i<count($bg_matches[2]);$i++){
       $image = $bg_matches[2][$i];
       if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
