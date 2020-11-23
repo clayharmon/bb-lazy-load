@@ -54,24 +54,9 @@ function bbll_admin_form_action(){
     $bbll_options['webp'] = $value;
   }
 
-  if( isset( $_POST['bbll_option_column_images'] ) ){
-    $value = esc_sql( $_POST['bbll_option_column_images'] );
-    $bbll_options['column_images'] = $value;
-  }
-
-  if( isset( $_POST['bbll_option_row_images'] ) ){
-    $value = esc_sql( $_POST['bbll_option_row_images'] );
-    $bbll_options['row_images'] = $value;
-  }
-
-  if( isset( $_POST['bbll_option_row_parallax'] ) ){
-    $value = esc_sql( $_POST['bbll_option_row_parallax'] );
-    $bbll_options['row_parallax'] = $value;
-  }
-
-  if( isset( $_POST['bbll_option_image_html'] ) ){
-    $value = esc_sql( $_POST['bbll_option_image_html'] );
-    $bbll_options['image_html'] = $value;
+  if( isset( $_POST['bbll_option_all_bb_bg_images'] ) ){
+    $value = esc_sql( $_POST['bbll_option_all_bb_bg_images'] );
+    $bbll_options['all_bb_bg_images'] = $value;
   }
 
   update_option('bbll_store', $bbll_options);
@@ -108,13 +93,7 @@ function bbll_settings_html(){
     <form style="padding:10px 0;" method="POST" action="<?php echo admin_url( 'admin.php' ); ?>">
       <?php echo bbll_checkbox_html($bbll_options, 'webp', 'Enable .webp? <em>exampleimage.jpg.webp</em>'); ?>
 
-      <?php echo bbll_checkbox_html($bbll_options, 'column_images', 'Enable lazy loading for column background images?'); ?>
-
-      <?php echo bbll_checkbox_html($bbll_options, 'row_images', 'Enable lazy loading for row background images?'); ?>
-
-      <?php echo bbll_checkbox_html($bbll_options, 'row_parallax', 'Enable lazy loading for row parallax images?'); ?>
-
-      <?php echo bbll_checkbox_html($bbll_options, 'image_html', 'Enable lazy load for all Beaver Builder img tags? <strong>(Experimental)</strong>'); ?>
+      <?php echo bbll_checkbox_html($bbll_options, 'all_bb_bg_images', 'Enable lazy load for all Beaver Builder background images?'); ?>
 
       <?php wp_nonce_field( 'bbll_admin_update_settings', 'bbll_admin_verify' ); ?>
       
@@ -130,6 +109,11 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
   $has_run = $has_run + 1; 
 
   $bbll_options = get_option('bbll_store');
+
+  if(!isset($bbll_options['all_bb_bg_images']) || !$bbll_options['all_bb_bg_images']){
+    update_option( 'bbll_bg_store', []);
+    return $css;
+  }
 
   $bg_matches = array();
   $bg_store = array();
