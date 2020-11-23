@@ -11,7 +11,7 @@ License URI: https://raw.githubusercontent.com/clayharmon/bb-lazy-load/master/LI
 Adds lazyloading to the Beaver Builder page builder.
 
 == Description ==
-This small plugin simply adds lazyloading to Beaver Builder for row and column background images (including parallax images) as well as normal html <img> tags.
+This small plugin simply adds lazyloading to Beaver Builder for all background images including row, parallax, and column background images.
 
 = Dependencies =
 * Uses [Plugin Update Checker](https://github.com/YahnisElsts/plugin-update-checker) for providing updates from GitHub
