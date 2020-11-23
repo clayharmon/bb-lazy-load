@@ -13,7 +13,7 @@ Adds lazyloading to the Beaver Builder page builder.
 
 ## Description
 
-This small plugin simply adds lazyloading to Beaver Builder for row and column background images (including parallax images) as well as normal html `<img>` tags.
+This small plugin simply adds lazyloading to Beaver Builder for all background images including row, parallax, and column background images.
 
 ### Dependencies
 
