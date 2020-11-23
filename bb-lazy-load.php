@@ -147,4 +147,5 @@ register_deactivation_hook( __FILE__, 'bbll_deactivation' );
 
 function bbll_deactivation(){
   FLBuilderModel::delete_asset_cache_for_all_posts();
+  delete_option('bbll_bg_store');
 }
