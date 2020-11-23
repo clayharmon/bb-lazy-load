@@ -16,13 +16,17 @@ $bbll_update_checker->getVcsApi()->enableReleaseAssets();
 
 
 function bbll_load_module_add_filters() {
+  $bbll_active_plugins = apply_filters( 'active_plugins', get_option( 'active_plugins' ) );
+
   if ( class_exists( 'FLBuilder' ) ) {
 
     if(!isset($_GET['fl_builder']) && !is_admin() && !wp_doing_ajax()){
       add_filter( 'fl_builder_row_attributes', 'bbll_builder_render_attrs_row', 10, 2 );
       add_filter( 'fl_builder_column_attributes', 'bbll_builder_render_attrs_col', 10, 2 );
-      if( has_filter('rocket_buffer') ){
+      if ( in_array( 'wp-rocket/wp-rocket.php', $bbll_active_plugins) ) {
         add_filter( 'rocket_buffer', 'bbll_builder_render_content', 10, 1);
+      } else if ( in_array( 'litespeed-cache/litespeed-cache.php', $bbll_active_plugins) ) {
+        add_filter( 'litespeed_buffer_before', 'bbll_builder_render_content', 0, 1); 
       } else {
         add_filter('bbll_final_output', 'bbll_builder_render_content', 0, 1);
       }
@@ -130,10 +134,16 @@ function bbll_settings_html(){
 // We need to grab the final HTML output.
 // https://stackoverflow.com/questions/772510/wordpress-filter-to-modify-final-html-output
 
-add_action( 'init', 'bbll_process_start' );
-function bbll_process_start() { ob_start(); }
+$bbll_active_plugins = apply_filters( 'active_plugins', get_option( 'active_plugins' ) );
+if(
+  !in_array( 'litespeed-cache/litespeed-cache.php', $bbll_active_plugins) && 
+  !in_array( 'wp-rocket/wp-rocket.php', $bbll_active_plugins)
+  ){
+  add_action( 'init', 'bbll_process_start' );
+  add_action( 'shutdown', 'bbll_process_end', 0 );
+}
 
-add_action( 'shutdown', 'bbll_process_end', 0 );
+function bbll_process_start() { ob_start(); }
 function bbll_process_end() {
     $final = '';
     
@@ -254,7 +264,8 @@ function bbll_builder_render_attrs_row( $attrs, $container ) {
 
   if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
     if(isset($bbll_options['webp']) && $bbll_options['webp']){
-      $extension = array_pop( explode('.', $image) );
+      $imageArr = explode('.', $image);
+      $extension = array_pop( $imageArr );
       if($extension === 'jpg' || $extension === 'png') {
         $image .= '.webp';
       } 
@@ -280,7 +291,8 @@ function bbll_builder_render_attrs_col( $attrs, $container ) {
 
   if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
     if(isset($bbll_options['webp']) && $bbll_options['webp']){
-      $extension = array_pop( explode('.', $image) );
+      $imageArr= explode('.', $image);
+      $extension = array_pop( $imageArr );
       if($extension === 'jpg' || $extension === 'png') {
         $image .= '.webp';
       } 
