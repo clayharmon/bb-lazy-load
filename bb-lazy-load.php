@@ -15,12 +15,10 @@ $bbll_update_checker = Puc_v4_Factory::buildUpdateChecker(
 $bbll_update_checker->getVcsApi()->enableReleaseAssets();
 
 
-function bbll_load_module_add_filters() {
-
+function bbll_load_scripts() {
   if ( class_exists( 'FLBuilder' ) ) {
 
     if(!isset($_GET['fl_builder']) && !is_admin() && !wp_doing_ajax()){
-      add_filter( 'fl_builder_render_css', 'bbll_builder_render_css', 10, 3 );
       wp_enqueue_script( 'bbll-intersection-observer', 'https://cdn.jsdelivr.net/npm/intersection-observer@0.5.1/intersection-observer.min.js', array(), '0.5.1', true );
       wp_enqueue_script( 'bbll-lazyload', 'https://cdn.jsdelivr.net/npm/vanilla-lazyload@11.0.6/dist/lazyload.min.js', array(), '11.0.6', true );
       
@@ -32,7 +30,17 @@ function bbll_load_module_add_filters() {
     }
   }
 }
-add_action( 'init', 'bbll_load_module_add_filters' );
+add_action( 'wp_enqueue_scripts', 'bbll_load_scripts', 20);
+
+function bbll_load_filters() {
+  if ( class_exists( 'FLBuilder' ) ) {
+
+    if(!isset($_GET['fl_builder']) && !is_admin() && !wp_doing_ajax()){
+      add_filter( 'fl_builder_render_css', 'bbll_builder_render_css', 10, 3 );
+    }
+  }
+}
+add_action( 'init', 'bbll_load_filters');
 
 function bbll_admin_nonce_notice() {
   if(isset($_GET['nonce_verify']) && $_GET['nonce_verify'] === 'false'){
