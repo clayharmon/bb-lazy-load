@@ -3,7 +3,7 @@
 Plugin Name: Beaver Builder - Lazy Load
 Description: Lazy loads background images set using Beaver Builder. Also will serve .webp if setting is selected.
 Author: Clay Harmon
-Version: 1.0.2 
+Version: 1.1 
 */
 
 require __DIR__.'/vendor/plugin-update-checker/plugin-update-checker.php';
@@ -20,9 +20,9 @@ function bbll_load_scripts() {
 
     if(!isset($_GET['fl_builder']) && !is_admin() && !wp_doing_ajax()){
       wp_enqueue_script( 'bbll-intersection-observer', 'https://cdn.jsdelivr.net/npm/intersection-observer@0.5.1/intersection-observer.min.js', array(), '0.5.1', true );
-      wp_enqueue_script( 'bbll-lazyload', 'https://cdn.jsdelivr.net/npm/vanilla-lazyload@11.0.6/dist/lazyload.min.js', array(), '11.0.6', true );
+      wp_enqueue_script( 'bbll-lazyload', 'https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3/dist/lazyload.min.js', array(), '11.0.6', true );
       
-      wp_enqueue_script( 'bbll-custom', plugins_url( '/assets/scripts.min.js', __FILE__ ), array('jquery'), '0.2', true);
+      wp_enqueue_script( 'bbll-custom', plugins_url( '/assets/scripts.min.js', __FILE__ ), array('jquery'), '0.3', true);
       $bbll_bg_store = get_option('bbll_bg_store');
       wp_localize_script( 'bbll-custom', 'bbll_bg_obj', $bbll_bg_store );
 
@@ -125,9 +125,12 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
 
   $bg_matches = array();
   $bg_store = array();
-  if(preg_match_all('/(.*?) {\n.*?(?:\n.*?)?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', $css, $bg_matches)) {
-    for($i=0;$i<count($bg_matches[2]);$i++){
-      $image = $bg_matches[2][$i];
+  $bg_medias = array();
+  if(preg_match_all('/(?:@media\((.*?)\) {\n)?(?:[ \t]*)?(.*?) {\n.*?(?:\n.*?)?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', $css, $bg_matches)) {
+    for($i=0;$i<count($bg_matches[3]);$i++){
+      $media = ($bg_matches[1][$i] === '') ? '' : '('.$bg_matches[1][$i].')';
+      $selector = $bg_matches[2][$i];
+      $image = $bg_matches[3][$i];
       if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
         if(isset($bbll_options['webp']) && $bbll_options['webp']){
           $imageArr = explode('.', $image);
@@ -137,15 +140,32 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
           } 
         }
       }
-      array_push($bg_store, [
-        "selector" => $bg_matches[1][$i],
-        "image" => $image
-      ]);
+
+      if(!in_array($media, $bg_medias)) {
+        array_push($bg_medias, $media);
+      }
+
+      if(array_key_exists($selector, $bg_store)) {
+        array_push($bg_store[$selector], [
+          "media" => $media,
+          "image" => $image
+        ]);
+      } else {
+        $bg_store[$selector] = [[
+          "media" => $media,
+          "image" => $image
+        ]];
+      }
+      
+
       $css = preg_replace('/\n.*?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', "", $css);
     }
   };
   if($has_run === 1){
-    update_option( 'bbll_bg_store', $bg_store);
+    update_option( 'bbll_bg_store', [
+      'data' => $bg_store,
+      'medias' => $bg_medias
+     ]);
   }
   return $css;
 }
