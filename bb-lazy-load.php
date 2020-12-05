@@ -20,9 +20,9 @@ function bbll_load_scripts() {
 
     if(!isset($_GET['fl_builder']) && !is_admin() && !wp_doing_ajax()){
       wp_enqueue_script( 'bbll-intersection-observer', 'https://cdn.jsdelivr.net/npm/intersection-observer@0.5.1/intersection-observer.min.js', array(), '0.5.1', true );
-      wp_enqueue_script( 'bbll-lazyload', 'https://cdn.jsdelivr.net/npm/vanilla-lazyload@11.0.6/dist/lazyload.min.js', array(), '11.0.6', true );
+      wp_enqueue_script( 'bbll-lazyload', 'https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3/dist/lazyload.min.js', array(), '11.0.6', true );
       
-      wp_enqueue_script( 'bbll-custom', plugins_url( '/assets/scripts.min.js', __FILE__ ), array('jquery'), '0.2', true);
+      wp_enqueue_script( 'bbll-custom', plugins_url( '/assets/scripts.js', __FILE__ ), array('jquery'), '0.2', true);
       $bbll_bg_store = get_option('bbll_bg_store');
       wp_localize_script( 'bbll-custom', 'bbll_bg_obj', $bbll_bg_store );
 
@@ -125,9 +125,9 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
 
   $bg_matches = array();
   $bg_store = array();
-  if(preg_match_all('/(.*?) {\n.*?(?:\n.*?)?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', $css, $bg_matches)) {
-    for($i=0;$i<count($bg_matches[2]);$i++){
-      $image = $bg_matches[2][$i];
+  if(preg_match_all('/(?:@media\((.*?)\) {\n)?(?:[ \t]*)?(.*?) {\n.*?(?:\n.*?)?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', $css, $bg_matches)) {
+    for($i=0;$i<count($bg_matches[3]);$i++){
+      $image = $bg_matches[3][$i];
       if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
         if(isset($bbll_options['webp']) && $bbll_options['webp']){
           $imageArr = explode('.', $image);
@@ -138,7 +138,8 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
         }
       }
       array_push($bg_store, [
-        "selector" => $bg_matches[1][$i],
+        "media" => $bg_matches[1][$i],
+        "selector" => $bg_matches[2][$i],
         "image" => $image
       ]);
       $css = preg_replace('/\n.*?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', "", $css);
