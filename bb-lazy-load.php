@@ -125,8 +125,11 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
 
   $bg_matches = array();
   $bg_store = array();
+  $bg_medias = array();
   if(preg_match_all('/(?:@media\((.*?)\) {\n)?(?:[ \t]*)?(.*?) {\n.*?(?:\n.*?)?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', $css, $bg_matches)) {
     for($i=0;$i<count($bg_matches[3]);$i++){
+      $media = ($bg_matches[1][$i] === '') ? '' : '('.$bg_matches[1][$i].')';
+      $selector = $bg_matches[2][$i];
       $image = $bg_matches[3][$i];
       if ((isset($_SERVER['HTTP_ACCEPT']) === true) && (strstr($_SERVER['HTTP_ACCEPT'], 'image/webp') !== false)) {
         if(isset($bbll_options['webp']) && $bbll_options['webp']){
@@ -137,16 +140,32 @@ function bbll_builder_render_css( $css, $nodes, $global_settings ) {
           } 
         }
       }
-      array_push($bg_store, [
-        "media" => $bg_matches[1][$i],
-        "selector" => $bg_matches[2][$i],
-        "image" => $image
-      ]);
+
+      if(!in_array($media, $bg_medias)) {
+        array_push($bg_medias, $media);
+      }
+
+      if(array_key_exists($selector, $bg_store)) {
+        array_push($bg_store[$selector], [
+          "media" => $media,
+          "image" => $image
+        ]);
+      } else {
+        $bg_store[$selector] = [[
+          "media" => $media,
+          "image" => $image
+        ]];
+      }
+      
+
       $css = preg_replace('/\n.*?background(?:-image)?:[ ]?url\([ ]?[\'"]?(.*?)[\'"]?\)/', "", $css);
     }
   };
   if($has_run === 1){
-    update_option( 'bbll_bg_store', $bg_store);
+    update_option( 'bbll_bg_store', [
+      'data' => $bg_store,
+      'medias' => $bg_medias
+     ]);
   }
   return $css;
 }
