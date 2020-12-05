@@ -3,7 +3,7 @@
 Plugin Name: Beaver Builder - Lazy Load
 Description: Lazy loads background images set using Beaver Builder. Also will serve .webp if setting is selected.
 Author: Clay Harmon
-Version: 1.0.2 
+Version: 1.1 
 */
 
 require __DIR__.'/vendor/plugin-update-checker/plugin-update-checker.php';
@@ -22,7 +22,7 @@ function bbll_load_scripts() {
       wp_enqueue_script( 'bbll-intersection-observer', 'https://cdn.jsdelivr.net/npm/intersection-observer@0.5.1/intersection-observer.min.js', array(), '0.5.1', true );
       wp_enqueue_script( 'bbll-lazyload', 'https://cdn.jsdelivr.net/npm/vanilla-lazyload@17.3/dist/lazyload.min.js', array(), '11.0.6', true );
       
-      wp_enqueue_script( 'bbll-custom', plugins_url( '/assets/scripts.js', __FILE__ ), array('jquery'), '0.2', true);
+      wp_enqueue_script( 'bbll-custom', plugins_url( '/assets/scripts.min.js', __FILE__ ), array('jquery'), '0.3', true);
       $bbll_bg_store = get_option('bbll_bg_store');
       wp_localize_script( 'bbll-custom', 'bbll_bg_obj', $bbll_bg_store );
 
